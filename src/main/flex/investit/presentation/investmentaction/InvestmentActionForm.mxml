@@ -6,6 +6,7 @@
 			import investit.domain.InvestmentAction;
 			import investit.domain.MoneyValue;
 			import investit.domain.Portofolio;
+			import investit.domain.ActionType;
 			
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;

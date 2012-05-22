@@ -46,9 +46,12 @@
 - mvn clean
 - mvn tomcat:run 
   --> note port will be 8282
-- browser --> http://localhost:8282/rootunes/rootunes_scaffold.html
-(rootunes_scaffold is the name of the html page & swf module that was generated)
+- browser --> http://localhost:8282/investitapp/investitapp_scaffold.html
+('investitapp' is the name of the html page & swf module that was generated)
+(= it is the maven project name !!)
 (the server uses Java, JPA, Spring Flex Remoting (BlazeDS))
+
+or mvn jetty:run at 8080 --> http://localhost:8080/investitapp/investitapp_scaffold.html
 
 
 * OR for running it in Eclipse: install a tomcat server (e.g. also on port 8282) in eclipse
@@ -60,6 +63,7 @@
 - you can then run the project on the server --> will deploy to the server
 - run at "http://localhost:8282/rootunes/rootunes_scaffold.html" (note: /rootunes and / do not work here)
 (note run as web app does not work, due to flashbuilder config not 100%, due to maven generated project config)
+
 
 
 The Application

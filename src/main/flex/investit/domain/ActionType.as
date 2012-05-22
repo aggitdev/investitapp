@@ -25,7 +25,7 @@ package  investit.domain {
 	  
 	    public function equals(other:ActionType):Boolean
     	{
-        	return other.enumValue = enumValue;
+        	return other.enumValue == enumValue;
     	}
     	
     	
