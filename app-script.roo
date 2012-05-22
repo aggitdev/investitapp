@@ -1,0 +1,82 @@
+project --topLevelPackage investit --projectName investitapp --java 6
+
+logging setup --level WARN
+
+persistence setup --database HYPERSONIC_PERSISTENT --provider HIBERNATE
+
+// TODO: database properties set --key database.url --value <TODO>
+
+
+embeddable --class ~.domain.MoneyValue
+field number --fieldName moneyAmount --notNull --type double
+field string --fieldName moneyCurrency --notNull
+
+
+entity --class ~.domain.Instrument 
+field number --fieldName idAtSource --notNull --type long
+field string --fieldName name --notNull
+field string --fieldName iSINCode --notNull
+field string --fieldName company --notNull
+field string --fieldName instrumentType --notNull
+field string --fieldName instrumentInfo
+
+
+entity --class ~.domain.InstrumentValue
+field embedded --fieldName moneyValue --type ~.domain.MoneyValue
+field date --fieldName valueDate --type java.util.Date --notNull --dateFormat SHORT
+// note: effectiveDate date the value is effective the real value (note that effectiveDate could differ slightly from valueDate when there was no value available at the 'valueDate' date)
+field date --fieldName effectiveDate --type java.util.Date --notNull --dateFormat SHORT
+field reference --fieldName instrument --type ~.domain.Instrument --notNull
+
+field set --class ~.domain.Instrument --fieldName instrumentValues --type ~.domain.InstrumentValue --mappedBy instrument --cardinality ONE_TO_MANY
+
+//entity --class ~.domain.InstrumentDefaultCosts
+//field string --fieldName name --notNull
+//field embedded --fieldName buyCost --type ~.domain.MoneyValue
+//field embedded --fieldName buyPercent --type ~.domain.Percentage
+//field embedded --fieldName sellCost --type ~.domain.MoneyValue
+//field embedded --fieldName sellPercent --type ~.domain.Percentage
+//field embedded --fieldName buyTaxCost --type ~.domain.MoneyValue
+//field embedded --fieldName buyTaxPercent --type ~.domain.Percentage
+//field embedded --fieldName sellTaxCost --type ~.domain.MoneyValue
+//field embedded --fieldName sellTaxPercent --type ~.domain.Percentage
+//field date --fieldName referenceDate --type java.util.Date --notNull --dateFormat SHORT
+//TODO set dividend percentage?
+
+entity --class ~.domain.Portofolio
+field string --fieldName name --notNull
+
+enum type --class ~.domain.ActionType
+enum constant --name BUY
+enum constant --name SELL
+
+entity --class ~.domain.InvestmentAction
+field enum --fieldName actionType --type ~.domain.ActionType
+field number --fieldName amount --notNull --type double
+field date --fieldName actionDate --type java.util.Date --notNull --dateFormat SHORT
+field embedded --fieldName cost --type ~.domain.MoneyValue
+field reference --fieldName instrument --type ~.domain.Instrument --notNull
+field reference --fieldName portofolio --type ~.domain.Portofolio --notNull
+
+field set --class ~.domain.Portofolio --fieldName actions --type ~.domain.InvestmentAction --mappedBy portofolio --cardinality ONE_TO_MANY
+
+entity --class ~.domain.Dividend
+field embedded --fieldName dividendValue --type ~.domain.MoneyValue
+field date --fieldName dividendDate --type java.util.Date --notNull --dateFormat SHORT
+field reference --fieldName instrument --type ~.domain.Instrument --notNull
+field reference --fieldName portofolio --type ~.domain.Portofolio --notNull
+
+field set --class ~.domain.Portofolio --fieldName dividends --type ~.domain.Dividend --mappedBy portofolio --cardinality ONE_TO_MANY
+
+focus --class ~.domain.Portofolio
+finder add --finderName findPortofoliosByNameLike
+
+focus --class ~.domain.Instrument
+finder add --finderName findInstrumentsByIdAtSource
+finder add --finderName findInstrumentsByISINCodeEquals
+
+flex setup
+flex remoting all --package ~.flexservices
+
+// NEXT: code editing in several domain objects etc.
+// NEXT: correct flex generated stuff: 

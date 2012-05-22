@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:s="library://ns.adobe.com/flex/spark" close="handleCloseEvent();" creationComplete="instrumentForm_creationCompleteHandler(event)" height="300" title="Instrument Form" width="400">
+    <fx:Script>
+        <![CDATA[
+            import mx.collections.ArrayCollection;
+            import mx.controls.Alert;
+            import mx.events.FlexEvent;
+            import mx.managers.PopUpManager;
+            import mx.messaging.ChannelSet;
+            import mx.rpc.events.FaultEvent;
+            import mx.rpc.events.ResultEvent;
+            
+            import mx.validators.Validator;
+            
+            import investit.domain.Instrument;
+            
+            
+            [Bindable]
+            public var remotingChannels:ChannelSet;
+            
+            [Bindable]
+            public var instrument:Instrument;
+            
+            private function handleCloseEvent():void {
+                PopUpManager.removePopUp(this);
+            }            
+            
+            private function processSave():void {
+                if (!validateAndCommit()){
+                    return;
+                }
+                this.dispatchEvent(new InstrumentEvent(((!instrument.id || instrument.id <= 0) ? InstrumentEvent.CREATE : InstrumentEvent.UPDATE), instrument));
+                PopUpManager.removePopUp(this);
+            }
+            
+            private function validateAndCommit():Boolean{
+                var validatorErrors:Array = Validator.validateAll(validators.source);
+                if (validatorErrors.length > 0){
+                    return false;
+                }
+                instrument.idAtSource = parseInt(idAtSourceInput.text);
+
+                instrument.name = nameInput.text;
+                instrument.company = companyInput.text;
+                instrument.instrumentType = instrumentTypeInput.text;
+                instrument.instrumentInfo = instrumentInfoInput.text;
+                instrument.iSINCode = iSINCodeInput.text;
+
+                return true;
+            }
+            
+            protected function instrumentForm_creationCompleteHandler(event:FlexEvent):void
+            {
+            }
+            
+        ]]>
+    </fx:Script>
+    
+    <fx:Declarations>
+        <s:ArrayList id="validators">
+            <mx:NumberValidator id="idAtSourceValidator" property="text" required="true" source="{idAtSourceInput}"/>
+            <mx:StringValidator id="nameValidator" property="text" required="true" source="{nameInput}"/>
+            <mx:StringValidator id="companyValidator" property="text" required="true" source="{companyInput}"/>
+            <mx:StringValidator id="instrumentTypeValidator" property="text" required="true" source="{instrumentTypeInput}"/>
+            <mx:StringValidator id="iSINCodeValidator" property="text" required="true" source="{iSINCodeInput}"/>
+        </s:ArrayList>
+    </fx:Declarations>
+    
+    <s:layout>
+        <s:VerticalLayout/>
+    </s:layout>
+    
+    <mx:Form id="instrumentForm">
+        <mx:FormItem id="idAtSourceField" label="Id At Source">
+        	<s:TextInput id="idAtSourceInput" text="{instrument.idAtSource}"/>
+        </mx:FormItem>
+        <mx:FormItem id="nameField" label="Name">
+        	<s:TextInput id="nameInput" text="{instrument.name}"/>
+        </mx:FormItem>
+        <mx:FormItem id="companyField" label="Company">
+        	<s:TextInput id="companyInput" text="{instrument.company}"/>
+        </mx:FormItem>
+        <mx:FormItem id="instrumentTypeField" label="Instrument Type">
+        	<s:TextInput id="instrumentTypeInput" text="{instrument.instrumentType}"/>
+        </mx:FormItem>
+        <mx:FormItem id="instrumentInfoField" label="Instrument Info">
+        	<s:TextInput id="instrumentInfoInput" text="{instrument.instrumentInfo}"/>
+        </mx:FormItem>
+        <mx:FormItem id="iSINCodeField" label="I S I N Code">
+        	<s:TextInput id="iSINCodeInput" text="{instrument.iSINCode}"/>
+        </mx:FormItem>
+    </mx:Form>
+    
+    <s:Group>
+        <s:layout>
+            <s:HorizontalLayout/>
+        </s:layout>
+        <s:Button click="processSave();" label="Save"/>
+        <s:Button click="handleCloseEvent();" label="Cancel"/>
+    </s:Group>
+    
+    
+</s:TitleWindow>

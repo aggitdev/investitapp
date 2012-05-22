@@ -1,0 +1,11 @@
+// Spring Roo 1.1.5.RELEASE [rev d3a68c3] log opened at 2011-12-30 18:44:39
+help
+metadata status
+flex setup
+flex remoting all --package ~.flexservices
+exit
+// Spring Roo 1.1.5.RELEASE [rev d3a68c3] log closed at 2011-12-30 19:35:33
+// Spring Roo 1.1.5.RELEASE [rev d3a68c3] log opened at 2011-12-30 21:48:34
+help
+// Spring Roo 1.1.5.RELEASE [rev d3a68c3] log closed at 2012-01-02 07:52:17
+// Spring Roo 1.1.5.RELEASE [rev d3a68c3] log opened at 2012-05-22 19:19:29

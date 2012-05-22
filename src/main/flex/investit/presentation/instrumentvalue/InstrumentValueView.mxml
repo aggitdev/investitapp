@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="instrumentValueView_creationCompleteHandler(event)" height="100%" title="InstrumentValue List" width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.ProgressBar;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import investit.domain.InstrumentValue;
+			
+			import spark.components.TitleWindow;
+			
+			[Bindable]
+			public var remotingChannels:ChannelSet;
+			
+			private var progressBar:ProgressBar;
+
+			protected function instrumentValueView_creationCompleteHandler(event:FlexEvent):void
+			{
+				instrumentValueService.list();
+			}
+			
+			protected function instrumentValueView_instrumentValueCreateEventHandler(event:InstrumentValueEvent):void
+			{
+				instrumentValueService.create(event.instrumentValue);
+				showProgressBar();
+			}
+			
+			protected function instrumentValueView_instrumentValueUpdateEventHandler(event:InstrumentValueEvent):void
+			{
+				instrumentValueService.update(event.instrumentValue);
+				showProgressBar();
+			}
+			
+			private function showForm(instrumentValue:InstrumentValue = null):void 
+			{
+				var form:InstrumentValueForm = PopUpManager.createPopUp(this, InstrumentValueForm, true) as InstrumentValueForm;
+				form.remotingChannels = remotingChannels;
+				form.instrumentValue = instrumentValue != null ? instrumentValue : new InstrumentValue();
+				form.addEventListener(InstrumentValueEvent.CREATE, instrumentValueView_instrumentValueCreateEventHandler);
+				form.addEventListener(InstrumentValueEvent.UPDATE, instrumentValueView_instrumentValueUpdateEventHandler);
+				PopUpManager.centerPopUp(form);
+			}
+			
+			private function showProgressBar():void {
+				progressBar = PopUpManager.createPopUp(this, ProgressBar, true) as ProgressBar;
+				progressBar.indeterminate = true;
+				progressBar.mode="manual";
+				PopUpManager.centerPopUp(progressBar);
+			}
+			
+			private function closeProgressBar():void {
+				PopUpManager.removePopUp(progressBar);
+			}
+
+			protected function instrumentValueService_createResultHandler(event:ResultEvent):void
+			{
+				var createdInstrumentValue:InstrumentValue = event.result as InstrumentValue;
+				var people:ArrayCollection = instrumentValueGrid.dataProvider as ArrayCollection;
+				people.addItem(createdInstrumentValue);
+				closeProgressBar();
+			}
+			
+			protected function instrumentValueService_updateResultHandler(event:ResultEvent):void
+			{
+				var updatedInstrumentValue:InstrumentValue = event.result as InstrumentValue;
+				var people:ArrayCollection = instrumentValueGrid.dataProvider as ArrayCollection;
+				for (var i:int=0; i<people.length; i++) {
+					var instrumentValue:InstrumentValue = people.getItemAt(i) as InstrumentValue;
+					if (instrumentValue.id == updatedInstrumentValue.id) {
+						people.removeItemAt(i);
+						people.addItemAt(updatedInstrumentValue, i);
+					}
+				}
+				closeProgressBar();
+			}
+			
+			protected function instrumentValueService_removeResultHandler(event:ResultEvent):void
+			{
+				var people:ArrayCollection = instrumentValueGrid.dataProvider as ArrayCollection;
+				people.removeItemAt(instrumentValueGrid.selectedIndex);
+				closeProgressBar();
+			}
+
+			protected function instrumentValueService_faultHandler(event:FaultEvent):void
+			{
+				closeProgressBar();
+				Alert.show(event.fault.faultString, "Remote Operation Failed");
+			}
+
+			protected function editInstrumentValueBtn_clickHandler(event:MouseEvent):void
+			{
+				if (instrumentValueGrid.selectedIndex > -1) {
+					var selectedInstrumentValue:InstrumentValue = instrumentValueGrid.selectedItem as InstrumentValue;
+					showForm(selectedInstrumentValue);
+				}
+			}
+
+			protected function deleteInstrumentValueBtn_clickHandler(event:MouseEvent):void
+			{
+				if (instrumentValueGrid.selectedIndex > -1) {
+					var selectedInstrumentValue:InstrumentValue = instrumentValueGrid.selectedItem as InstrumentValue;
+					showProgressBar();
+					instrumentValueService.remove(selectedInstrumentValue.id);
+				}
+			}
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:RemoteObject channelSet="{remotingChannels}" destination="instrumentValueService" fault="instrumentValueService_faultHandler(event)" id="instrumentValueService">
+			<s:method name="create" result="instrumentValueService_createResultHandler(event)"/>
+			<s:method name="update" result="instrumentValueService_updateResultHandler(event)"/>
+			<s:method name="remove" result="instrumentValueService_removeResultHandler(event)"/>
+		</s:RemoteObject>
+		
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	
+	<s:Button click="showForm();" id="newInstrumentValueBtn" label="New InstrumentValue"/>
+	
+	<mx:DataGrid dataProvider="{instrumentValueService.list.lastResult}" height="80%" id="instrumentValueGrid" width="80%">
+		<mx:columns>
+			<mx:DataGridColumn dataField="valueDate" headerText="Value Date" id="valueDateColumn"/>
+            <mx:DataGridColumn dataField="effectiveDate" headerText="Effective Date" id="effectiveDateColumn"/>
+		</mx:columns>
+	</mx:DataGrid>
+	
+	<s:Group>
+		<s:layout>
+			<s:HorizontalLayout/>
+		</s:layout>
+		<s:Button click="editInstrumentValueBtn_clickHandler(event)" id="editInstrumentValueBtn" label="Edit"/>
+		<s:Button click="deleteInstrumentValueBtn_clickHandler(event)" id="deleteInstrumentValueBtn" label="Delete"/>
+	</s:Group>
+</s:Panel>

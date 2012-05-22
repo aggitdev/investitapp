@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="instrumentView_creationCompleteHandler(event)" height="100%" title="Instrument List" width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.ProgressBar;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import investit.domain.Instrument;
+			
+			import spark.components.TitleWindow;
+			
+			[Bindable]
+			public var remotingChannels:ChannelSet;
+			
+			private var progressBar:ProgressBar;
+
+			protected function instrumentView_creationCompleteHandler(event:FlexEvent):void
+			{
+				instrumentService.list();
+			}
+			
+			protected function instrumentView_instrumentCreateEventHandler(event:InstrumentEvent):void
+			{
+				instrumentService.create(event.instrument);
+				showProgressBar();
+			}
+			
+			protected function instrumentView_instrumentUpdateEventHandler(event:InstrumentEvent):void
+			{
+				instrumentService.update(event.instrument);
+				showProgressBar();
+			}
+			
+			private function showForm(instrument:Instrument = null):void 
+			{
+				var form:InstrumentForm = PopUpManager.createPopUp(this, InstrumentForm, true) as InstrumentForm;
+				form.remotingChannels = remotingChannels;
+				form.instrument = instrument != null ? instrument : new Instrument();
+				form.addEventListener(InstrumentEvent.CREATE, instrumentView_instrumentCreateEventHandler);
+				form.addEventListener(InstrumentEvent.UPDATE, instrumentView_instrumentUpdateEventHandler);
+				PopUpManager.centerPopUp(form);
+			}
+			
+			private function showProgressBar():void {
+				progressBar = PopUpManager.createPopUp(this, ProgressBar, true) as ProgressBar;
+				progressBar.indeterminate = true;
+				progressBar.mode="manual";
+				PopUpManager.centerPopUp(progressBar);
+			}
+			
+			private function closeProgressBar():void {
+				PopUpManager.removePopUp(progressBar);
+			}
+
+			protected function instrumentService_createResultHandler(event:ResultEvent):void
+			{
+				var createdInstrument:Instrument = event.result as Instrument;
+				var people:ArrayCollection = instrumentGrid.dataProvider as ArrayCollection;
+				people.addItem(createdInstrument);
+				closeProgressBar();
+			}
+			
+			protected function instrumentService_updateResultHandler(event:ResultEvent):void
+			{
+				var updatedInstrument:Instrument = event.result as Instrument;
+				var people:ArrayCollection = instrumentGrid.dataProvider as ArrayCollection;
+				for (var i:int=0; i<people.length; i++) {
+					var instrument:Instrument = people.getItemAt(i) as Instrument;
+					if (instrument.id == updatedInstrument.id) {
+						people.removeItemAt(i);
+						people.addItemAt(updatedInstrument, i);
+					}
+				}
+				closeProgressBar();
+			}
+			
+			protected function instrumentService_removeResultHandler(event:ResultEvent):void
+			{
+				var people:ArrayCollection = instrumentGrid.dataProvider as ArrayCollection;
+				people.removeItemAt(instrumentGrid.selectedIndex);
+				closeProgressBar();
+			}
+
+			protected function instrumentService_faultHandler(event:FaultEvent):void
+			{
+				closeProgressBar();
+				Alert.show(event.fault.faultString, "Remote Operation Failed");
+			}
+
+			protected function editInstrumentBtn_clickHandler(event:MouseEvent):void
+			{
+				if (instrumentGrid.selectedIndex > -1) {
+					var selectedInstrument:Instrument = instrumentGrid.selectedItem as Instrument;
+					showForm(selectedInstrument);
+				}
+			}
+
+			protected function deleteInstrumentBtn_clickHandler(event:MouseEvent):void
+			{
+				if (instrumentGrid.selectedIndex > -1) {
+					var selectedInstrument:Instrument = instrumentGrid.selectedItem as Instrument;
+					showProgressBar();
+					instrumentService.remove(selectedInstrument.id);
+				}
+			}
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:RemoteObject channelSet="{remotingChannels}" destination="instrumentService" fault="instrumentService_faultHandler(event)" id="instrumentService">
+			<s:method name="create" result="instrumentService_createResultHandler(event)"/>
+			<s:method name="update" result="instrumentService_updateResultHandler(event)"/>
+			<s:method name="remove" result="instrumentService_removeResultHandler(event)"/>
+		</s:RemoteObject>
+		
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	
+	<s:Button click="showForm();" id="newInstrumentBtn" label="New Instrument"/>
+	
+	<mx:DataGrid dataProvider="{instrumentService.list.lastResult}" height="80%" id="instrumentGrid" width="80%">
+		<mx:columns>
+			<mx:DataGridColumn dataField="idAtSource" headerText="Id At Source" id="idAtSourceColumn"/>
+            <mx:DataGridColumn dataField="name" headerText="Name" id="nameColumn"/>
+            <mx:DataGridColumn dataField="company" headerText="Company" id="companyColumn"/>
+            <mx:DataGridColumn dataField="instrumentType" headerText="Instrument Type" id="instrumentTypeColumn"/>
+            <mx:DataGridColumn dataField="instrumentInfo" headerText="Instrument Info" id="instrumentInfoColumn"/>
+            <mx:DataGridColumn dataField="iSINCode" headerText="I S I N Code" id="iSINCodeColumn"/>
+		</mx:columns>
+	</mx:DataGrid>
+	
+	<s:Group>
+		<s:layout>
+			<s:HorizontalLayout/>
+		</s:layout>
+		<s:Button click="editInstrumentBtn_clickHandler(event)" id="editInstrumentBtn" label="Edit"/>
+		<s:Button click="deleteInstrumentBtn_clickHandler(event)" id="deleteInstrumentBtn" label="Delete"/>
+	</s:Group>
+</s:Panel>

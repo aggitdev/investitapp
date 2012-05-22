@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="investmentActionView_creationCompleteHandler(event)" height="100%" title="InvestmentAction List" width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.ProgressBar;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import investit.domain.InvestmentAction;
+			
+			import spark.components.TitleWindow;
+			
+			[Bindable]
+			public var remotingChannels:ChannelSet;
+			
+			private var progressBar:ProgressBar;
+
+			protected function investmentActionView_creationCompleteHandler(event:FlexEvent):void
+			{
+				investmentActionService.list();
+			}
+			
+			protected function investmentActionView_investmentActionCreateEventHandler(event:InvestmentActionEvent):void
+			{
+				investmentActionService.create(event.investmentAction);
+				showProgressBar();
+			}
+			
+			protected function investmentActionView_investmentActionUpdateEventHandler(event:InvestmentActionEvent):void
+			{
+				investmentActionService.update(event.investmentAction);
+				showProgressBar();
+			}
+			
+			private function showForm(investmentAction:InvestmentAction = null):void 
+			{
+				var form:InvestmentActionForm = PopUpManager.createPopUp(this, InvestmentActionForm, true) as InvestmentActionForm;
+				form.remotingChannels = remotingChannels;
+				form.investmentAction = investmentAction != null ? investmentAction : new InvestmentAction();
+				form.addEventListener(InvestmentActionEvent.CREATE, investmentActionView_investmentActionCreateEventHandler);
+				form.addEventListener(InvestmentActionEvent.UPDATE, investmentActionView_investmentActionUpdateEventHandler);
+				PopUpManager.centerPopUp(form);
+			}
+			
+			private function showProgressBar():void {
+				progressBar = PopUpManager.createPopUp(this, ProgressBar, true) as ProgressBar;
+				progressBar.indeterminate = true;
+				progressBar.mode="manual";
+				PopUpManager.centerPopUp(progressBar);
+			}
+			
+			private function closeProgressBar():void {
+				PopUpManager.removePopUp(progressBar);
+			}
+
+			protected function investmentActionService_createResultHandler(event:ResultEvent):void
+			{
+				var createdInvestmentAction:InvestmentAction = event.result as InvestmentAction;
+				var people:ArrayCollection = investmentActionGrid.dataProvider as ArrayCollection;
+				people.addItem(createdInvestmentAction);
+				closeProgressBar();
+			}
+			
+			protected function investmentActionService_updateResultHandler(event:ResultEvent):void
+			{
+				var updatedInvestmentAction:InvestmentAction = event.result as InvestmentAction;
+				var people:ArrayCollection = investmentActionGrid.dataProvider as ArrayCollection;
+				for (var i:int=0; i<people.length; i++) {
+					var investmentAction:InvestmentAction = people.getItemAt(i) as InvestmentAction;
+					if (investmentAction.id == updatedInvestmentAction.id) {
+						people.removeItemAt(i);
+						people.addItemAt(updatedInvestmentAction, i);
+					}
+				}
+				closeProgressBar();
+			}
+			
+			protected function investmentActionService_removeResultHandler(event:ResultEvent):void
+			{
+				var people:ArrayCollection = investmentActionGrid.dataProvider as ArrayCollection;
+				people.removeItemAt(investmentActionGrid.selectedIndex);
+				closeProgressBar();
+			}
+
+			protected function investmentActionService_faultHandler(event:FaultEvent):void
+			{
+				closeProgressBar();
+				Alert.show(event.fault.faultString, "Remote Operation Failed");
+			}
+
+			protected function editInvestmentActionBtn_clickHandler(event:MouseEvent):void
+			{
+				if (investmentActionGrid.selectedIndex > -1) {
+					var selectedInvestmentAction:InvestmentAction = investmentActionGrid.selectedItem as InvestmentAction;
+					showForm(selectedInvestmentAction);
+				}
+			}
+
+			protected function deleteInvestmentActionBtn_clickHandler(event:MouseEvent):void
+			{
+				if (investmentActionGrid.selectedIndex > -1) {
+					var selectedInvestmentAction:InvestmentAction = investmentActionGrid.selectedItem as InvestmentAction;
+					showProgressBar();
+					investmentActionService.remove(selectedInvestmentAction.id);
+				}
+			}
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:RemoteObject channelSet="{remotingChannels}" destination="investmentActionService" fault="investmentActionService_faultHandler(event)" id="investmentActionService">
+			<s:method name="create" result="investmentActionService_createResultHandler(event)"/>
+			<s:method name="update" result="investmentActionService_updateResultHandler(event)"/>
+			<s:method name="remove" result="investmentActionService_removeResultHandler(event)"/>
+		</s:RemoteObject>
+		
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	
+	<s:Button click="showForm();" id="newInvestmentActionBtn" label="New InvestmentAction"/>
+	
+	<mx:DataGrid dataProvider="{investmentActionService.list.lastResult}" height="80%" id="investmentActionGrid" width="80%">
+		<mx:columns>
+			<mx:DataGridColumn dataField="amount" headerText="Amount" id="amountColumn"/>
+            <mx:DataGridColumn dataField="actionDate" headerText="Action Date" id="actionDateColumn"/>
+		</mx:columns>
+	</mx:DataGrid>
+	
+	<s:Group>
+		<s:layout>
+			<s:HorizontalLayout/>
+		</s:layout>
+		<s:Button click="editInvestmentActionBtn_clickHandler(event)" id="editInvestmentActionBtn" label="Edit"/>
+		<s:Button click="deleteInvestmentActionBtn_clickHandler(event)" id="deleteInvestmentActionBtn" label="Delete"/>
+	</s:Group>
+</s:Panel>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flex-config xmlns="http://www.adobe.com/2006/flex-config">
+	<includes append="true">
+	<symbol>investit.presentation.instrumentvalue.InstrumentValueView</symbol>
+    <symbol>investit.presentation.dividend.DividendView</symbol>
+    <symbol>investit.presentation.portofolio.PortofolioView</symbol>
+    <symbol>investit.presentation.instrument.InstrumentView</symbol>
+    <symbol>investit.presentation.investmentaction.InvestmentActionView</symbol>
+    </includes>
+</flex-config>

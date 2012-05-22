@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="portofolioView_creationCompleteHandler(event)" height="100%" title="Portofolio List" width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.ProgressBar;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import investit.domain.Portofolio;
+			
+			import spark.components.TitleWindow;
+			
+			[Bindable]
+			public var remotingChannels:ChannelSet;
+			
+			private var progressBar:ProgressBar;
+
+			protected function portofolioView_creationCompleteHandler(event:FlexEvent):void
+			{
+				portofolioService.list();
+			}
+			
+			protected function portofolioView_portofolioCreateEventHandler(event:PortofolioEvent):void
+			{
+				portofolioService.create(event.portofolio);
+				showProgressBar();
+			}
+			
+			protected function portofolioView_portofolioUpdateEventHandler(event:PortofolioEvent):void
+			{
+				portofolioService.update(event.portofolio);
+				showProgressBar();
+			}
+			
+			private function showForm(portofolio:Portofolio = null):void 
+			{
+				var form:PortofolioForm = PopUpManager.createPopUp(this, PortofolioForm, true) as PortofolioForm;
+				form.remotingChannels = remotingChannels;
+				form.portofolio = portofolio != null ? portofolio : new Portofolio();
+				form.addEventListener(PortofolioEvent.CREATE, portofolioView_portofolioCreateEventHandler);
+				form.addEventListener(PortofolioEvent.UPDATE, portofolioView_portofolioUpdateEventHandler);
+				PopUpManager.centerPopUp(form);
+			}
+			
+			private function showProgressBar():void {
+				progressBar = PopUpManager.createPopUp(this, ProgressBar, true) as ProgressBar;
+				progressBar.indeterminate = true;
+				progressBar.mode="manual";
+				PopUpManager.centerPopUp(progressBar);
+			}
+			
+			private function closeProgressBar():void {
+				PopUpManager.removePopUp(progressBar);
+			}
+
+			protected function portofolioService_createResultHandler(event:ResultEvent):void
+			{
+				var createdPortofolio:Portofolio = event.result as Portofolio;
+				var people:ArrayCollection = portofolioGrid.dataProvider as ArrayCollection;
+				people.addItem(createdPortofolio);
+				closeProgressBar();
+			}
+			
+			protected function portofolioService_updateResultHandler(event:ResultEvent):void
+			{
+				var updatedPortofolio:Portofolio = event.result as Portofolio;
+				var people:ArrayCollection = portofolioGrid.dataProvider as ArrayCollection;
+				for (var i:int=0; i<people.length; i++) {
+					var portofolio:Portofolio = people.getItemAt(i) as Portofolio;
+					if (portofolio.id == updatedPortofolio.id) {
+						people.removeItemAt(i);
+						people.addItemAt(updatedPortofolio, i);
+					}
+				}
+				closeProgressBar();
+			}
+			
+			protected function portofolioService_removeResultHandler(event:ResultEvent):void
+			{
+				var people:ArrayCollection = portofolioGrid.dataProvider as ArrayCollection;
+				people.removeItemAt(portofolioGrid.selectedIndex);
+				closeProgressBar();
+			}
+
+			protected function portofolioService_faultHandler(event:FaultEvent):void
+			{
+				closeProgressBar();
+				Alert.show(event.fault.faultString, "Remote Operation Failed");
+			}
+
+			protected function editPortofolioBtn_clickHandler(event:MouseEvent):void
+			{
+				if (portofolioGrid.selectedIndex > -1) {
+					var selectedPortofolio:Portofolio = portofolioGrid.selectedItem as Portofolio;
+					showForm(selectedPortofolio);
+				}
+			}
+
+			protected function deletePortofolioBtn_clickHandler(event:MouseEvent):void
+			{
+				if (portofolioGrid.selectedIndex > -1) {
+					var selectedPortofolio:Portofolio = portofolioGrid.selectedItem as Portofolio;
+					showProgressBar();
+					portofolioService.remove(selectedPortofolio.id);
+				}
+			}
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:RemoteObject channelSet="{remotingChannels}" destination="portofolioService" fault="portofolioService_faultHandler(event)" id="portofolioService">
+			<s:method name="create" result="portofolioService_createResultHandler(event)"/>
+			<s:method name="update" result="portofolioService_updateResultHandler(event)"/>
+			<s:method name="remove" result="portofolioService_removeResultHandler(event)"/>
+		</s:RemoteObject>
+		
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	
+	<s:Button click="showForm();" id="newPortofolioBtn" label="New Portofolio"/>
+	
+	<mx:DataGrid dataProvider="{portofolioService.list.lastResult}" height="80%" id="portofolioGrid" width="80%">
+		<mx:columns>
+			<mx:DataGridColumn dataField="name" headerText="Name" id="nameColumn"/>
+		</mx:columns>
+	</mx:DataGrid>
+	
+	<s:Group>
+		<s:layout>
+			<s:HorizontalLayout/>
+		</s:layout>
+		<s:Button click="editPortofolioBtn_clickHandler(event)" id="editPortofolioBtn" label="Edit"/>
+		<s:Button click="deletePortofolioBtn_clickHandler(event)" id="deletePortofolioBtn" label="Delete"/>
+	</s:Group>
+</s:Panel>

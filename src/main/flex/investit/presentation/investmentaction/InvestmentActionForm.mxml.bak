@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:s="library://ns.adobe.com/flex/spark" close="handleCloseEvent();" creationComplete="investmentActionForm_creationCompleteHandler(event)" height="300" title="InvestmentAction Form" width="400">
+	<fx:Script>
+        
+            import mx.collections.ArrayCollection;
+            import mx.controls.Alert;
+            import mx.events.FlexEvent;
+            import mx.managers.PopUpManager;
+            import mx.messaging.ChannelSet;
+            import mx.rpc.events.FaultEvent;
+            import mx.rpc.events.ResultEvent;
+            
+            import mx.validators.Validator;
+            
+            import investit.domain.InvestmentAction;
+            
+            import investit.domain.Instrument;
+            import investit.domain.Portofolio;
+
+            
+            [Bindable]
+            public var remotingChannels:ChannelSet;
+            
+            [Bindable]
+            public var investmentAction:InvestmentAction;
+            
+            private function handleCloseEvent():void {
+                PopUpManager.removePopUp(this);
+            }            
+            
+            private function processSave():void {
+                if (!validateAndCommit()){
+                    return;
+                }
+                this.dispatchEvent(new InvestmentActionEvent(((!investmentAction.id || investmentAction.id &lt;= 0) ? InvestmentActionEvent.CREATE : InvestmentActionEvent.UPDATE), investmentAction));
+                PopUpManager.removePopUp(this);
+            }
+            
+            private function validateAndCommit():Boolean{
+                var validatorErrors:Array = Validator.validateAll(validators.source);
+                if (validatorErrors.length &gt; 0){
+                    return false;
+                }
+                investmentAction.actionType = actionTypeInput.text;
+                investmentAction.amount = parseInt(amountInput.text);
+
+                investmentAction.actionDate = actionDateInput.selectedDate;
+
+                investmentAction.cost = costInput.text;
+                investmentAction.instrument = instrumentInput.selectedItem;
+                investmentAction.portofolio = portofolioInput.selectedItem;
+
+                return true;
+            }
+            
+            protected function investmentActionForm_creationCompleteHandler(event:FlexEvent):void
+            {
+                instrumentService.list();
+                portofolioService.list();
+
+            }
+            
+            protected function instrumentService_faultHandler(event:FaultEvent):void
+            {
+                Alert.show(event.fault.faultString, "Remote Operation Failed");
+            }
+
+            protected function instrumentService_listResultHandler(event:ResultEvent):void
+            {
+                instrumentInput.dataProvider = event.result as ArrayCollection;
+                selectInstrument();
+            }
+
+            private function selectInstrument():void {
+            	if (investmentAction.instrument == null) {
+            		return;
+            	}
+            	for each(var instrumentItem:Instrument in instrumentInput.dataProvider) {
+            		if (investmentAction.instrument.id == instrumentItem.id) {
+            			instrumentInput.selectedItem = instrumentItem;
+            			return;
+            		}
+            	}
+            }
+
+            protected function portofolioService_faultHandler(event:FaultEvent):void
+            {
+                Alert.show(event.fault.faultString, "Remote Operation Failed");
+            }
+
+            protected function portofolioService_listResultHandler(event:ResultEvent):void
+            {
+                portofolioInput.dataProvider = event.result as ArrayCollection;
+                selectPortofolio();
+            }
+
+            private function selectPortofolio():void {
+            	if (investmentAction.portofolio == null) {
+            		return;
+            	}
+            	for each(var portofolioItem:Portofolio in portofolioInput.dataProvider) {
+            		if (investmentAction.portofolio.id == portofolioItem.id) {
+            			portofolioInput.selectedItem = portofolioItem;
+            			return;
+            		}
+            	}
+            }
+
+
+        
+    </fx:Script>
+	
+	<fx:Declarations>
+		<s:RemoteObject channelSet="{remotingChannels}" destination="instrumentService" fault="instrumentService_faultHandler(event)" id="instrumentService">
+			<s:method name="list" result="instrumentService_listResultHandler(event)"/>
+		</s:RemoteObject>
+		<s:RemoteObject channelSet="{remotingChannels}" destination="portofolioService" fault="portofolioService_faultHandler(event)" id="portofolioService">
+			<s:method name="list" result="portofolioService_listResultHandler(event)"/>
+		</s:RemoteObject>
+		<s:ArrayList id="validators">
+			<mx:NumberValidator id="amountValidator" property="text" required="true" source="{amountInput}"/>
+			<mx:DateValidator id="actionDateValidator" property="selectedDate" required="true" source="{actionDateInput}"/>
+			<mx:StringValidator id="instrumentValidator" property="selectedItem" required="true" source="{instrumentInput}"/>
+			<mx:StringValidator id="portofolioValidator" property="selectedItem" required="true" source="{portofolioInput}"/>
+		</s:ArrayList>
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	
+	<mx:Form id="investmentActionForm">
+		<mx:FormItem id="actionTypeField" label="Action Type">
+			<s:TextInput id="actionTypeInput" text="{investmentAction.actionType}"/>
+		</mx:FormItem>
+		<mx:FormItem id="amountField" label="Amount">
+			<s:TextInput id="amountInput" text="{investmentAction.amount}"/>
+		</mx:FormItem>
+		<mx:FormItem id="actionDateField" label="Action Date">
+			<mx:DateField id="actionDateInput" selectedDate="{investmentAction.actionDate}"/>
+		</mx:FormItem>
+		<mx:FormItem id="costField" label="Cost">
+			<s:TextInput id="costInput" text="{investmentAction.cost.moneyAmount}"/>
+			<s:Label text="EUR"/>
+		</mx:FormItem>
+		<mx:FormItem id="instrumentField" label="Instrument">
+			<s:DropDownList id="instrumentInput" labelField="name"/>	</mx:FormItem>
+		<mx:FormItem id="portofolioField" label="Portofolio">
+			<s:DropDownList id="portofolioInput" labelField="name"/>	</mx:FormItem>
+	</mx:Form>
+	
+	<s:Group>
+		<s:layout>
+			<s:HorizontalLayout/>
+		</s:layout>
+		<s:Button click="processSave();" label="Save"/>
+		<s:Button click="handleCloseEvent();" label="Cancel"/>
+	</s:Group>
+	
+	
+</s:TitleWindow>

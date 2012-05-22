@@ -1,0 +1,10 @@
+1) creating a investment action through blaze ds fails --> because the persist --> also does the persist for an instrument
+--> this was done to enable public void buy(InstrumentInfo iinfo, double amount, Date dateOfBuy, MoneyValue costs) on Portofolio
+--> and then simply call Portofolio.persist (cascading everything that is needed)
+--> how to solve?
+
+see:
+    @ManyToOne(cascade={CascadeType.PERSIST}) // AG:good idea? no because it makes that if we persist a new investmentaction, that then the instrument is persisted as well (even in the case when it is a detached object!)
+    private Instrument instrument;
+
+2) see manual notes ...

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="dividendView_creationCompleteHandler(event)" height="100%" title="Dividend List" width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.ProgressBar;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import investit.domain.Dividend;
+			
+			import spark.components.TitleWindow;
+			
+			[Bindable]
+			public var remotingChannels:ChannelSet;
+			
+			private var progressBar:ProgressBar;
+
+			protected function dividendView_creationCompleteHandler(event:FlexEvent):void
+			{
+				dividendService.list();
+			}
+			
+			protected function dividendView_dividendCreateEventHandler(event:DividendEvent):void
+			{
+				dividendService.create(event.dividend);
+				showProgressBar();
+			}
+			
+			protected function dividendView_dividendUpdateEventHandler(event:DividendEvent):void
+			{
+				dividendService.update(event.dividend);
+				showProgressBar();
+			}
+			
+			private function showForm(dividend:Dividend = null):void 
+			{
+				var form:DividendForm = PopUpManager.createPopUp(this, DividendForm, true) as DividendForm;
+				form.remotingChannels = remotingChannels;
+				form.dividend = dividend != null ? dividend : new Dividend();
+				form.addEventListener(DividendEvent.CREATE, dividendView_dividendCreateEventHandler);
+				form.addEventListener(DividendEvent.UPDATE, dividendView_dividendUpdateEventHandler);
+				PopUpManager.centerPopUp(form);
+			}
+			
+			private function showProgressBar():void {
+				progressBar = PopUpManager.createPopUp(this, ProgressBar, true) as ProgressBar;
+				progressBar.indeterminate = true;
+				progressBar.mode="manual";
+				PopUpManager.centerPopUp(progressBar);
+			}
+			
+			private function closeProgressBar():void {
+				PopUpManager.removePopUp(progressBar);
+			}
+
+			protected function dividendService_createResultHandler(event:ResultEvent):void
+			{
+				var createdDividend:Dividend = event.result as Dividend;
+				var people:ArrayCollection = dividendGrid.dataProvider as ArrayCollection;
+				people.addItem(createdDividend);
+				closeProgressBar();
+			}
+			
+			protected function dividendService_updateResultHandler(event:ResultEvent):void
+			{
+				var updatedDividend:Dividend = event.result as Dividend;
+				var people:ArrayCollection = dividendGrid.dataProvider as ArrayCollection;
+				for (var i:int=0; i<people.length; i++) {
+					var dividend:Dividend = people.getItemAt(i) as Dividend;
+					if (dividend.id == updatedDividend.id) {
+						people.removeItemAt(i);
+						people.addItemAt(updatedDividend, i);
+					}
+				}
+				closeProgressBar();
+			}
+			
+			protected function dividendService_removeResultHandler(event:ResultEvent):void
+			{
+				var people:ArrayCollection = dividendGrid.dataProvider as ArrayCollection;
+				people.removeItemAt(dividendGrid.selectedIndex);
+				closeProgressBar();
+			}
+
+			protected function dividendService_faultHandler(event:FaultEvent):void
+			{
+				closeProgressBar();
+				Alert.show(event.fault.faultString, "Remote Operation Failed");
+			}
+
+			protected function editDividendBtn_clickHandler(event:MouseEvent):void
+			{
+				if (dividendGrid.selectedIndex > -1) {
+					var selectedDividend:Dividend = dividendGrid.selectedItem as Dividend;
+					showForm(selectedDividend);
+				}
+			}
+
+			protected function deleteDividendBtn_clickHandler(event:MouseEvent):void
+			{
+				if (dividendGrid.selectedIndex > -1) {
+					var selectedDividend:Dividend = dividendGrid.selectedItem as Dividend;
+					showProgressBar();
+					dividendService.remove(selectedDividend.id);
+				}
+			}
+
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:RemoteObject channelSet="{remotingChannels}" destination="dividendService" fault="dividendService_faultHandler(event)" id="dividendService">
+			<s:method name="create" result="dividendService_createResultHandler(event)"/>
+			<s:method name="update" result="dividendService_updateResultHandler(event)"/>
+			<s:method name="remove" result="dividendService_removeResultHandler(event)"/>
+		</s:RemoteObject>
+		
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	
+	<s:Button click="showForm();" id="newDividendBtn" label="New Dividend"/>
+	
+	<mx:DataGrid dataProvider="{dividendService.list.lastResult}" height="80%" id="dividendGrid" width="80%">
+		<mx:columns>
+			<mx:DataGridColumn dataField="dividendDate" headerText="Dividend Date" id="dividendDateColumn"/>
+		</mx:columns>
+	</mx:DataGrid>
+	
+	<s:Group>
+		<s:layout>
+			<s:HorizontalLayout/>
+		</s:layout>
+		<s:Button click="editDividendBtn_clickHandler(event)" id="editDividendBtn" label="Edit"/>
+		<s:Button click="deleteDividendBtn_clickHandler(event)" id="deleteDividendBtn" label="Delete"/>
+	</s:Group>
+</s:Panel>
