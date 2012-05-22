@@ -75,6 +75,9 @@ The Application
             <property name="hibernate.hbm2ddl.auto" value="create"/> -->  value="create" to build a new database on each run; 
 
 
+Note: the application is on git:
+for info see: http://help.github.com/win-set-up-git/
+URL: https://github.com/aggitdev/investitapp
 
 
 

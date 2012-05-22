@@ -42,7 +42,7 @@
 					Alert.show('Errors: '+ObjectUtil.toString(validatorErrors), 'Validation Alert');
 					return false;
 				}
-				investmentAction.actionType = actionTypeInput.text;
+				investmentAction.actionType = ActionType.create(actionTypeInput.text);
 				investmentAction.amount = parseInt(amountInput.text);
 				
 				investmentAction.actionDate = actionDateInput.selectedDate;
