@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:s="library://ns.adobe.com/flex/spark" close="handleCloseEvent();" creationComplete="instrumentValueForm_creationCompleteHandler(event)" height="300" title="InstrumentValue Form" width="400">
+	<fx:Script>
+        
+            import mx.collections.ArrayCollection;
+            import mx.controls.Alert;
+            import mx.events.FlexEvent;
+            import mx.managers.PopUpManager;
+            import mx.messaging.ChannelSet;
+            import mx.rpc.events.FaultEvent;
+            import mx.rpc.events.ResultEvent;
+            
+            import mx.validators.Validator;
+            
+            import investit.domain.InstrumentValue;
+            
+            import investit.domain.Instrument;
+
+            
+            [Bindable]
+            public var remotingChannels:ChannelSet;
+            
+            [Bindable]
+            public var instrumentValue:InstrumentValue;
+            
+            private function handleCloseEvent():void {
+                PopUpManager.removePopUp(this);
+            }            
+            
+            private function processSave():void {
+                if (!validateAndCommit()){
+                    return;
+                }
+                this.dispatchEvent(new InstrumentValueEvent(((!instrumentValue.id || instrumentValue.id &lt;= 0) ? InstrumentValueEvent.CREATE : InstrumentValueEvent.UPDATE), instrumentValue));
+                PopUpManager.removePopUp(this);
+            }
+            
+            private function validateAndCommit():Boolean{
+                var validatorErrors:Array = Validator.validateAll(validators.source);
+                if (validatorErrors.length &gt; 0){
+                    return false;
+                }
+                instrumentValue.moneyValue = moneyValueInput.text;
+                instrumentValue.valueDate = valueDateInput.selectedDate;
+
+                instrumentValue.effectiveDate = effectiveDateInput.selectedDate;
+
+                instrumentValue.instrument = instrumentInput.selectedItem;
+
+                return true;
+            }
+            
+            protected function instrumentValueForm_creationCompleteHandler(event:FlexEvent):void
+            {
+                instrumentService.list();
+
+            }
+            
+            protected function instrumentService_faultHandler(event:FaultEvent):void
+            {
+                Alert.show(event.fault.faultString, "Remote Operation Failed");
+            }
+
+            protected function instrumentService_listResultHandler(event:ResultEvent):void
+            {
+                instrumentInput.dataProvider = event.result as ArrayCollection;
+                selectInstrument();
+            }
+
+            private function selectInstrument():void {
+            	if (instrumentValue.instrument == null) {
+            		return;
+            	}
+            	for each(var instrumentItem:Instrument in instrumentInput.dataProvider) {
+            		if (instrumentValue.instrument.id == instrumentItem.id) {
+            			instrumentInput.selectedItem = instrumentItem;
+            			return;
+            		}
+            	}
+            }
+
+
+        
+    </fx:Script>
+	
+	<fx:Declarations>
+		<s:RemoteObject channelSet="{remotingChannels}" destination="instrumentService" fault="instrumentService_faultHandler(event)" id="instrumentService">
+			<s:method name="list" result="instrumentService_listResultHandler(event)"/>
+		</s:RemoteObject>
+		<s:ArrayList id="validators">
+			<mx:DateValidator id="valueDateValidator" property="selectedDate" required="true" source="{valueDateInput}"/>
+			<mx:DateValidator id="effectiveDateValidator" property="selectedDate" required="true" source="{effectiveDateInput}"/>
+			<mx:StringValidator id="instrumentValidator" property="selectedItem" required="true" source="{instrumentInput}"/>
+		</s:ArrayList>
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	
+	<mx:Form id="instrumentValueForm">
+		<mx:FormItem id="moneyValueField" label="Money Value">
+			<s:TextInput id="moneyValueInput" text="{instrumentValue.moneyValue.moneyAmount}"/>
+			<s:Label text="EUR"/>
+		</mx:FormItem>
+		<mx:FormItem id="valueDateField" label="Value Date">
+			<mx:DateField id="valueDateInput" selectedDate="{instrumentValue.valueDate}"/>
+		</mx:FormItem>
+		<mx:FormItem id="effectiveDateField" label="Effective Date">
+			<mx:DateField id="effectiveDateInput" selectedDate="{instrumentValue.effectiveDate}"/>
+		</mx:FormItem>
+		<mx:FormItem id="instrumentField" label="Instrument">
+			<s:DropDownList id="instrumentInput" labelField="name"/>	</mx:FormItem>
+	</mx:Form>
+	
+	<s:Group>
+		<s:layout>
+			<s:HorizontalLayout/>
+		</s:layout>
+		<s:Button click="processSave();" label="Save"/>
+		<s:Button click="handleCloseEvent();" label="Cancel"/>
+	</s:Group>
+	
+	
+</s:TitleWindow>

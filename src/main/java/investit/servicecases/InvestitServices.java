@@ -7,6 +7,11 @@ import investit.services.detijd.StockSearcher;
 
 import java.util.List;
 
+import org.springframework.flex.remoting.RemotingDestination;
+import org.springframework.stereotype.Service;
+
+@RemotingDestination
+@Service
 public class InvestitServices {
 
 	public ListOfInstrumentInfos listInstrumentsWith(String nameLike) {

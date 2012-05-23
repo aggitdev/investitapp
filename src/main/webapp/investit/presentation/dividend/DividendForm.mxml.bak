@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:s="library://ns.adobe.com/flex/spark" close="handleCloseEvent();" creationComplete="dividendForm_creationCompleteHandler(event)" height="300" title="Dividend Form" width="400">
+	<fx:Script>
+        
+            import mx.collections.ArrayCollection;
+            import mx.controls.Alert;
+            import mx.events.FlexEvent;
+            import mx.managers.PopUpManager;
+            import mx.messaging.ChannelSet;
+            import mx.rpc.events.FaultEvent;
+            import mx.rpc.events.ResultEvent;
+            
+            import mx.validators.Validator;
+            
+            import investit.domain.Dividend;
+            
+            import investit.domain.Instrument;
+            import investit.domain.Portofolio;
+
+            
+            [Bindable]
+            public var remotingChannels:ChannelSet;
+            
+            [Bindable]
+            public var dividend:Dividend;
+            
+            private function handleCloseEvent():void {
+                PopUpManager.removePopUp(this);
+            }            
+            
+            private function processSave():void {
+                if (!validateAndCommit()){
+                    return;
+                }
+                this.dispatchEvent(new DividendEvent(((!dividend.id || dividend.id &lt;= 0) ? DividendEvent.CREATE : DividendEvent.UPDATE), dividend));
+                PopUpManager.removePopUp(this);
+            }
+            
+            private function validateAndCommit():Boolean{
+                var validatorErrors:Array = Validator.validateAll(validators.source);
+                if (validatorErrors.length &gt; 0){
+                    return false;
+                }
+                dividend.dividendValue = dividendValueInput.text;
+                dividend.dividendDate = dividendDateInput.selectedDate;
+
+                dividend.instrument = instrumentInput.selectedItem;
+                dividend.portofolio = portofolioInput.selectedItem;
+
+                return true;
+            }
+            
+            protected function dividendForm_creationCompleteHandler(event:FlexEvent):void
+            {
+                instrumentService.list();
+                portofolioService.list();
+
+            }
+            
+            protected function instrumentService_faultHandler(event:FaultEvent):void
+            {
+                Alert.show(event.fault.faultString, "Remote Operation Failed");
+            }
+
+            protected function instrumentService_listResultHandler(event:ResultEvent):void
+            {
+                instrumentInput.dataProvider = event.result as ArrayCollection;
+                selectInstrument();
+            }
+
+            private function selectInstrument():void {
+            	if (dividend.instrument == null) {
+            		return;
+            	}
+            	for each(var instrumentItem:Instrument in instrumentInput.dataProvider) {
+            		if (dividend.instrument.id == instrumentItem.id) {
+            			instrumentInput.selectedItem = instrumentItem;
+            			return;
+            		}
+            	}
+            }
+
+            protected function portofolioService_faultHandler(event:FaultEvent):void
+            {
+                Alert.show(event.fault.faultString, "Remote Operation Failed");
+            }
+
+            protected function portofolioService_listResultHandler(event:ResultEvent):void
+            {
+                portofolioInput.dataProvider = event.result as ArrayCollection;
+                selectPortofolio();
+            }
+
+            private function selectPortofolio():void {
+            	if (dividend.portofolio == null) {
+            		return;
+            	}
+            	for each(var portofolioItem:Portofolio in portofolioInput.dataProvider) {
+            		if (dividend.portofolio.id == portofolioItem.id) {
+            			portofolioInput.selectedItem = portofolioItem;
+            			return;
+            		}
+            	}
+            }
+
+
+        
+    </fx:Script>
+	
+	<fx:Declarations>
+		<s:RemoteObject channelSet="{remotingChannels}" destination="instrumentService" fault="instrumentService_faultHandler(event)" id="instrumentService">
+			<s:method name="list" result="instrumentService_listResultHandler(event)"/>
+		</s:RemoteObject>
+		<s:RemoteObject channelSet="{remotingChannels}" destination="portofolioService" fault="portofolioService_faultHandler(event)" id="portofolioService">
+			<s:method name="list" result="portofolioService_listResultHandler(event)"/>
+		</s:RemoteObject>
+		<s:ArrayList id="validators">
+			<mx:DateValidator id="dividendDateValidator" property="selectedDate" required="true" source="{dividendDateInput}"/>
+			<mx:StringValidator id="instrumentValidator" property="selectedItem" required="true" source="{instrumentInput}"/>
+			<mx:StringValidator id="portofolioValidator" property="selectedItem" required="true" source="{portofolioInput}"/>
+		</s:ArrayList>
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	
+	<mx:Form id="dividendForm">
+		<mx:FormItem id="dividendValueField" label="Dividend Value">
+			<s:TextInput id="dividendValueInput" text="{dividend.dividendValue.moneyAmount}"/>
+			<s:Label text="EUR"/>
+		</mx:FormItem>
+		<mx:FormItem id="dividendDateField" label="Dividend Date">
+			<mx:DateField id="dividendDateInput" selectedDate="{dividend.dividendDate}"/>
+		</mx:FormItem>
+		<mx:FormItem id="instrumentField" label="Instrument">
+			<s:DropDownList id="instrumentInput" labelField="name"/>	</mx:FormItem>
+		<mx:FormItem id="portofolioField" label="Portofolio">
+			<s:DropDownList id="portofolioInput" labelField="name"/>	</mx:FormItem>
+	</mx:Form>
+	
+	<s:Group>
+		<s:layout>
+			<s:HorizontalLayout/>
+		</s:layout>
+		<s:Button click="processSave();" label="Save"/>
+		<s:Button click="handleCloseEvent();" label="Cancel"/>
+	</s:Group>
+	
+	
+</s:TitleWindow>

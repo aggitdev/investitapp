@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%">
+	
+
+	<fx:Script>
+		<![CDATA[
+			import investit.domain.Portofolio;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.ProgressBar;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.components.TitleWindow;
+			
+			[Bindable]
+			public var remotingChannels:ChannelSet;
+			
+			private var progressBar:ProgressBar;
+			
+			private function showProgressBar():void {
+				progressBar = PopUpManager.createPopUp(this, ProgressBar, true) as ProgressBar;
+				progressBar.indeterminate = true;
+				progressBar.mode="manual";
+				PopUpManager.centerPopUp(progressBar);
+			}
+			
+			private function closeProgressBar():void {
+				PopUpManager.removePopUp(progressBar);
+			}
+			
+			protected function listInstrumentsWithResultHandler(event:ResultEvent):void
+			{
+				// JAVA: public ListOfInstrumentInfos listInstrumentsWith(String nameLike)
+				// JAVA: public cass ListOfInstrumentInfos extends InvestitBase {	
+			    //       private List<InstrumentInfo> instrumentsInfos = new ArrayList<InstrumentInfo>();
+					
+				var listOfInstrumentInfosObject:Object = event.result as Object; // TOOD map to actionscript type?
+				var listOfInstrumentInfos:ArrayCollection = listOfInstrumentInfosObject.instrumentsInfos as ArrayCollection; // ideally a list of InstrumentInfo objects
+				instrumentInfosData = listOfInstrumentInfos;
+				closeProgressBar();
+			}
+			
+			
+			
+			[Bindable]
+			private var instrumentInfosData:ArrayCollection = new ArrayCollection(); // bound to datagrid
+			
+			protected function faultHandler(event:FaultEvent):void
+			{
+				closeProgressBar();
+				Alert.show(event.fault.toString(), "Remote Operation Failed");
+			}
+			
+			
+			protected function buttonSubmit_clickHandler(event:MouseEvent):void
+			{
+				investitServices.listInstrumentsWith(textInputInstrument.text); // launches the service
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:RemoteObject id="investitServices" channelSet="{remotingChannels}" destination="investitServices" fault="faultHandler(event)" >
+			<s:method name="listInstrumentsWith" result="listInstrumentsWithResultHandler(event)"/>
+		</s:RemoteObject>		
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10"/>
+	</s:layout>
+	
+	
+
+
+	<s:VGroup left="10" right="10" top="10" bottom="10">
+		<s:Label color="blue" text="Search for an instrument:"/>
+		
+		<mx:Form width="100%" height="100%">
+			<mx:FormItem label="Instrument">
+				<mx:TextInput id="textInputInstrument" width="200"/>
+			</mx:FormItem>			
+			<mx:FormItem>	
+				<mx:Button id="buttonSubmit" label="Search" click="buttonSubmit_clickHandler(event)" width="200"/>
+			</mx:FormItem>
+		</mx:Form>
+	</s:VGroup>
+	
+
+	<mx:DataGrid id="instrumentsGrid" dataProvider="{instrumentInfosData}" height="80%" width="100%">
+		<mx:columns>
+			<mx:DataGridColumn id="nameColumn" dataField="name" headerText="Name" />
+			<mx:DataGridColumn id="companyColumn" dataField="company" headerText="Company" />
+			<mx:DataGridColumn id="isinColumn" dataField="ISINCode" headerText="ISINCode" />
+			<mx:DataGridColumn id="instrTypeColumn" dataField="instrumentType" headerText="Instrument Type" />
+			<!-- ... -->
+			<mx:DataGridColumn id="currSymbolColumn" dataField="currencySymbol" headerText="Currency Symbol" />
+			<mx:DataGridColumn id="lastPriceDoubleColumn" dataField="lastPriceDouble" headerText="Last Price" />
+			<mx:DataGridColumn id="lastPriceTimeColumn" dataField="lastPriceTime" headerText="Last Price Date" />		
+		</mx:columns>
+	</mx:DataGrid>
+	
+	<!-- JAVA:
+	abstract class InstrumentInfo extends InvestitCoreObject {
+	
+	abstract long getInstrumentId()
+	abstract String getName()
+	abstract String getCompany()
+	abstract String getISINCode()
+	abstract String getInstrumentType()
+	abstract String getInfo()
+	abstract String getCurrencySymbol()
+	abstract double getLastPriceDouble()
+	abstract Date getLastPriceTime()
+	
+	}	
+	-->
+	
+	
+</s:Group>

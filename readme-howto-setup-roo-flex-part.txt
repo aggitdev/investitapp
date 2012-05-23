@@ -1,4 +1,7 @@
-* install flashbuilder into eclipse as a plugin (some webref how to do this...)
+* install flashbuilder into eclipse as a plugin 
+e.g. for 4.6 see: http://helpx.adobe.com/flash-builder/release-note/flash-builder-4-6-release.html
+and see " Flash Builder 4.6 supports installation as a plugin to an existing Eclipse instance. To do so:..."
+
 
 * it all start with roo (version  1.1.5) and mvn (version 3)
 
@@ -84,7 +87,9 @@ for info see: http://help.github.com/win-set-up-git/
 URL: https://github.com/aggitdev/investitapp
 
 
-
+Configuring FlashBuilder
+========================
+- ...
 
 --------------------------
 
