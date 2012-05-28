@@ -7,8 +7,12 @@
 			import flash.utils.getDefinitionByName;
 			import flash.utils.getQualifiedClassName;
 			
+			import investit.dto.InstrumentInfoDTO;
+			import investit.ui.BuyOrBackEvent;
+			
 			import mx.controls.Alert;
 			import mx.core.UIComponent;
+			import mx.utils.ObjectUtil;
 			
 			protected function entityList_doubleClickHandler(event:MouseEvent):void
 			{	
@@ -30,6 +34,19 @@
 					Alert.show("No view found for the selected entity.", "View Unavailable");
 				}
 			}
+			
+			protected function buyPanelBuyOrBackEventHandler(event:BuyOrBackEvent):void
+			{
+				searchAndBuyViewStack.selectedChild = searchPanelContent;
+			}
+			
+			protected function searchPanelBuyOrBackEventHandler(event:BuyOrBackEvent):void
+			{
+				Alert.show(ObjectUtil.toString(event.data), 'searchPanelBuyOrBackEventHandler');
+				buyPanel.init(event.data as InstrumentInfoDTO);
+				searchAndBuyViewStack.selectedChild = buyPanelContent;
+			}
+			
 		]]>
 	</fx:Script>
 
@@ -66,8 +83,17 @@
 
 			</s:NavigatorContent>
 			
-			<s:NavigatorContent id="search" label="Search">		
-				<ui:SearchPanel remotingChannels="{remotingChannels}"/>
+			<s:NavigatorContent id="search" label="Search" width="100%">
+				<mx:ViewStack id="searchAndBuyViewStack" width="100%" height="100%">
+					<s:NavigatorContent id="searchPanelContent">
+						<ui:SearchPanel remotingChannels="{remotingChannels}" buyOrBackEvent="searchPanelBuyOrBackEventHandler(event)" />
+					</s:NavigatorContent>
+					<s:NavigatorContent id="buyPanelContent">
+						<ui:BuyPanel id="buyPanel" remotingChannels="{remotingChannels}" buyOrBackEvent="buyPanelBuyOrBackEventHandler(event)"/>
+					</s:NavigatorContent>
+				</mx:ViewStack>
+				
+				
 			</s:NavigatorContent>
 			
 			<s:NavigatorContent id="future" label="...">

@@ -44,6 +44,7 @@ public class Portofolio extends InvestitBase {
 		//TODO solve: how to persist instrument? --> cascade? --> makes that flex detached instruments from an action are faulty persisted
 		MoneyValue mv = new MoneyValue(iinfo.getLastPriceDouble(), iinfo.getCurrencySymbol());
 		Date effectiveDate = iinfo.getLastPriceTime(); 
+		//TODO round effectiveDate up to a DAY !!??
 		if (i.hasNoValueForDate(dateOfBuy)) { // only create new instrument values
 			warnIfNotSameDate(iinfo, dateOfBuy, effectiveDate);
 			i.createInstrumentValue(mv, dateOfBuy, effectiveDate);

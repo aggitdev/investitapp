@@ -21,7 +21,7 @@ public class TestExistingPortofolioAndBuyStockSecondTime extends InvestitSpringC
 		Portofolio portofolio = Portofolio.findPortofoliosByNameLike("testPorto").getSingleResult();		
 		
 		InvestitServices srv = new InvestitServices();
-		ListOfInstrumentInfos  il = srv.listInstrumentsWith("KBC");
+		ListOfInstrumentInfos  il = srv.listInstrumentsWithHelper("KBC");
 		//il.println();
 		InstrumentInfo i = il.selectInstrumentWithExternalServiceId(350001199); // kbc stock USD, see above
 		MoneyValue costs = new MoneyValue(200.0,"EUR");

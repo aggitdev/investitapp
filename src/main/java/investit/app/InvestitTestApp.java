@@ -8,13 +8,8 @@ import investit.domain.Portofolio;
 import investit.services.detijd.FundSearcher;
 import investit.util.DataSourceUtil;
 
-import java.sql.SQLException;
 import java.util.Date;
 
-import javax.sql.DataSource;
-
-import org.apache.commons.dbcp.BasicDataSource;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -24,7 +19,7 @@ public class InvestitTestApp {
 	public static void main(String... args) {
 		ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("classpath*:**/applicationContext.xml");
 		new InvestitTestApp().run();
-		FundSearcher.main(null);
+		FundSearcher.main((String[])null);
 		DataSourceUtil.closeBasicDataSource(ctx, "dataSource"); // forces the HSQL file to write to file
 	}
 
@@ -35,7 +30,7 @@ public class InvestitTestApp {
 		p.getActions().add(a);
 		a.setPortofolio(p);
 		p.persist();
-		for (Portofolio pf : p.findAllPortofoliosEagerFetchActionsAndDividends()) {
+		for (Portofolio pf : Portofolio.findAllPortofoliosEagerFetchActionsAndDividends()) {
 			System.out.println(pf.toString());
 		}
 	}

@@ -43,6 +43,7 @@ public class EnumProxy extends BeanProxy {
 					+ propertyName);
 	}
 
+	@SuppressWarnings("unchecked")
 	public Object instanceComplete(Object instance) {
 		EnumStub es = (EnumStub) instance;
 		return Enum.valueOf(es.cl, es.value);

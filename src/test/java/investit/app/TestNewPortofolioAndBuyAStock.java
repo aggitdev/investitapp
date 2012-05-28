@@ -38,13 +38,13 @@ public class TestNewPortofolioAndBuyAStock extends InvestitSpringConfiguredAndDa
 		Portofolio portofolio = Portofolio.findPortofoliosByNameLike("testPorto").getSingleResult();		
 		
 		InvestitServices srv = new InvestitServices();
-		ListOfInstrumentInfos  il = srv.listInstrumentsWith("KBC");
+		ListOfInstrumentInfos  il = srv.listInstrumentsWithHelper("KBC");
 		//il.println();
-		InstrumentInfo i = il.selectInstrumentWithExternalServiceId(350001199); // kbc stock USD, see above
+		InstrumentInfo instr = il.selectInstrumentWithExternalServiceId(350001199); // kbc stock USD, see above
 		MoneyValue costs = new MoneyValue(105.0,"EUR");
 		Date dateOfBuy = DateUtils.today();
 		double amount = 1.0;
-		portofolio.buy(i, amount, dateOfBuy, costs); // creates other objects as well...		
+		portofolio.buy(instr, amount, dateOfBuy, costs); // creates other objects as well...		
 		portofolio.persist();
 	}
 

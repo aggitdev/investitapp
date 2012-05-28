@@ -22,11 +22,19 @@ public class ListOfInstrumentInfos extends InvestitBase {
 		}
 		return null;
 	}
+	
+	public int size() {
+		return instrumentsInfos.size();
+	}
 
 	public void println() {
 		for (InstrumentInfo iinfo : instrumentsInfos) {
 			println(iinfo.toXMLString());
 		}
+	}
+
+	public List<InstrumentInfo> createInstrumentInfoList() {
+		return new ArrayList<InstrumentInfo>(this.instrumentsInfos);
 	}
 
 }

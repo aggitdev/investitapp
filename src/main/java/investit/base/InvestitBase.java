@@ -10,5 +10,10 @@ public class InvestitBase {
 	public void println(Object o) {
 		System.out.println(o);
 	}
+	
+	
+	protected void logInfo(String msg, Object... args) {
+		logger.info(String.format(msg,args));
+	}
 
 }

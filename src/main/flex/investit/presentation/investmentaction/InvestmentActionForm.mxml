@@ -48,7 +48,7 @@
 				
 				investmentAction.actionDate = actionDateInput.selectedDate;
 				
-				investmentAction.cost = MoneyValue.create(parseFloat(costInput.text),"EUR");  
+				investmentAction.cost = MoneyValue.create(parseFloat(costInput.text),costInputCurrency.text);  
 				investmentAction.instrument = instrumentInput.selectedItem;
 				investmentAction.portofolio = portofolioInput.selectedItem;
 				
@@ -120,6 +120,7 @@
 			<s:method name="list" result="portofolioService_listResultHandler(event)"/>
 		</s:RemoteObject>
 		<s:ArrayList id="validators">
+			<!-- TODO validate action type as an enum input -->
 			<mx:NumberValidator id="amountValidator" property="text" required="true" source="{amountInput}"/>
 			<mx:DateValidator id="actionDateValidator" property="selectedDate" required="true" source="{actionDateInput}"/>
 			<mx:StringValidator id="instrumentValidator" property="selectedItem" required="true" source="{instrumentInput}"/>
@@ -133,7 +134,7 @@
 	
 	<mx:Form id="investmentActionForm">
 		<mx:FormItem id="actionTypeField" label="Action Type">
-			<s:TextInput id="actionTypeInput" text="{investmentAction.actionType}"/>
+			<s:TextInput id="actionTypeInput" text="{investmentAction.actionType.enumValue}"/> <!-- TODO make it a dropdownlist -->
 		</mx:FormItem>
 		<mx:FormItem id="amountField" label="Amount">
 			<s:TextInput id="amountInput" text="{investmentAction.amount}"/>
@@ -142,8 +143,10 @@
 			<mx:DateField id="actionDateInput" selectedDate="{investmentAction.actionDate}"/>
 		</mx:FormItem>
 		<mx:FormItem id="costField" label="Cost">
-			<s:TextInput id="costInput" text="{investmentAction.cost.moneyAmount}"/>
-			<s:Label text="EUR"/>
+			<s:HGroup>
+				<s:TextInput id="costInput" text="{investmentAction.cost.moneyAmount}"/>
+				<s:TextInput id="costInputCurrency" text="{investmentAction.cost.moneyCurrency"/>
+			</s:HGroup>
 		</mx:FormItem>
 		<mx:FormItem id="instrumentField" label="Instrument">
 			<s:DropDownList id="instrumentInput" labelField="name"/>	</mx:FormItem>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXDataGridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" 
+						  focusEnabled="true">
+	
+	<fx:Metadata> 
+		[Event(name="buyOrBackEvent", type="investit.ui.BuyOrBackEvent")] 
+	</fx:Metadata> 	
+	
+	<fx:Script>
+		<![CDATA[
+			protected function button_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new BuyOrBackEvent(BuyOrBackEvent.BUY, this.data, true, true)); // this.data is the current row of the datagrid given to the renderer
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Button id="button" top="0" left="0" right="0" bottom="0" label="BUY" click="button_clickHandler(event)"/>
+</s:MXDataGridItemRenderer>

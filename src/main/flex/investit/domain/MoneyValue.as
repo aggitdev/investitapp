@@ -1,4 +1,5 @@
 package  investit.domain{
+	[Bindable]
 	[RemoteClass(alias="investit.domain.MoneyValue")]
 	public class MoneyValue {
 		

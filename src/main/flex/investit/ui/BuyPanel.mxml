@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="100%" height="100%"
+		 title="Set your options for buying:">
+	
+	<fx:Metadata> 
+		[Event(name="buyOrBackEvent", type="investit.ui.BuyOrBackEvent")] 
+	</fx:Metadata> 
+
+
+	<fx:Script>
+		<![CDATA[
+			import flash.utils.describeType;
+			import flash.utils.getQualifiedClassName;
+			
+			import investit.domain.MoneyValue;
+			import investit.domain.Portofolio;
+			import investit.domain.ServiceResult;
+			import investit.dto.InstrumentInfoDTO;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.ProgressBar;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.messaging.ChannelSet;
+			import mx.rpc.Fault;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.ObjectUtil;
+			import mx.validators.Validator;
+			
+			import spark.components.TitleWindow;
+			
+			public function init(instrInfo:InstrumentInfoDTO):void
+			{
+				this.instrumentInfoDTO = instrInfo;
+				portofolioService.list();
+			}			
+			
+			//TODO make a object of this set of props?
+			[Bindable]
+			private var instrumentInfoDTO:InstrumentInfoDTO; // will be set // contains instrument & instumentvalue info
+			[Bindable]
+			public var amount:Number = 1.0;			
+			[Bindable]
+			public var actionDate:Date = new Date();			
+			[Bindable]
+			public var cost:MoneyValue = MoneyValue.create(0.0,"EUR");
+			[Bindable]
+			public var portofolio:Portofolio; // will be selected // we only need the id for the service call to buy, but receive the whole
+
+			
+			[Bindable]
+			[ArrayElementType("investit.domain.Portofolio")]
+			private var portofolioInputData:ArrayCollection = new ArrayCollection(); // bound to datagrid & loaded by remote call
+			
+			
+			[Bindable]
+			public var remotingChannels:ChannelSet;
+			
+			private var progressBar:ProgressBar;
+			
+			private function showProgressBar():void {
+				progressBar = PopUpManager.createPopUp(this, ProgressBar, true) as ProgressBar;
+				progressBar.indeterminate = true;
+				progressBar.mode="manual";
+				PopUpManager.centerPopUp(progressBar);
+			}
+			
+			private function closeProgressBar():void {
+				PopUpManager.removePopUp(progressBar);
+			}
+			
+			protected function faultHandler(event:FaultEvent):void
+			{
+				closeProgressBar();
+				Alert.show(event.fault.toString(), "Remote Operation Failed");
+			}
+			
+			
+			protected function buttonSubmit_clickHandler(event:MouseEvent):void
+			{
+				processBuy();
+			}
+			
+			protected function buttonBack_clickHandler(event:MouseEvent):void
+			{
+				processBack();
+			}
+
+			private function processBuy():void {
+				if (!validateAndCommit()){
+					return;
+				}
+				investitServices.buy(portofolio.id, instrumentInfoDTO, amount, actionDate, cost);				
+				this.dispatchEvent(new BuyOrBackEvent(BuyOrBackEvent.BUY));
+			}
+			
+			private function processBack():void {
+				this.dispatchEvent(new BuyOrBackEvent(BuyOrBackEvent.BACK));
+			}			
+			
+			private function validateAndCommit():Boolean{
+				var validatorErrors:Array = Validator.validateAll(validators.source);
+				if (validatorErrors.length > 0){
+					Alert.show('Errors: '+ObjectUtil.toString(validatorErrors), 'Validation Alert');
+					return false;
+				}
+				this.portofolio = portofolioInput.selectedItem;
+				this.amount = parseFloat(amountInput.text);
+				this.actionDate = actionDateInput.selectedDate;
+				this.cost = MoneyValue.create(parseFloat(costInput.text),costInputCurrency.text);
+				
+				return true;
+			}			
+			
+			protected function portofolioService_listResultHandler(event:ResultEvent):void
+			{
+				portofolioInputData = event.result as ArrayCollection;
+			}
+						
+			
+			protected function buyResultHandler(event:ResultEvent):void
+			{
+				var serviceResult:ServiceResult = event.result as ServiceResult;
+				Alert.show(serviceResult.message,serviceResult.status);
+				processBack();
+			}
+
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:RemoteObject id="investitServices" channelSet="{remotingChannels}" destination="investitServices" fault="faultHandler(event)" >
+			<!-- public ServiceResult buy(long portofolioId, InstrumentInfo instrInfo, double amount, Date dateOfBuy, MoneyValue costs) { -->
+			<s:method name="buy" result="buyResultHandler(event)"/>			
+		</s:RemoteObject>
+		<!-- TODO refactor with other remote objects, make a kind of PortofolioRemoting object? -->
+		<!-- TODO or have the portofolioInputData as a property of this component -->
+		<s:RemoteObject channelSet="{remotingChannels}" destination="portofolioService" fault="faultHandler(event)" id="portofolioService">
+			<s:method name="list" result="portofolioService_listResultHandler(event)"/>
+		</s:RemoteObject>
+		
+		<s:ArrayList id="validators">
+			<mx:NumberValidator id="amountValidator" property="text" required="true" source="{amountInput}"/>
+			<mx:DateValidator id="actionDateValidator" property="selectedDate" required="true" source="{actionDateInput}"/>
+			<mx:StringValidator id="portofolioValidator" property="selectedItem" required="true" source="{portofolioInput}"/>
+			<!-- TODO also check property InstrumentInfoDTO is not null -->
+		</s:ArrayList>
+		
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10"/>
+	</s:layout>
+	
+	
+
+
+	<s:VGroup left="10" right="10" top="10" bottom="10">
+		
+		<mx:Form width="100%" height="100%">
+			<mx:FormItem label="{instrumentInfoDTO.instrumentType}">
+				<mx:Label text="{instrumentInfoDTO.name+'('+instrumentInfoDTO.ISINCode+')'}" width="200"/>
+			</mx:FormItem>
+			<mx:FormItem label="Price">
+				<mx:Label text="{instrumentInfoDTO.lastPriceDouble+' '+instrumentInfoDTO.currencySymbol+'@ '+instrumentInfoDTO.lastPriceTime}" width="200"/>
+			</mx:FormItem>			
+			<mx:FormItem label="Info">
+				<mx:TextArea text="{instrumentInfoDTO.info}" width="200" editable="false"/>
+			</mx:FormItem>			
+			
+			<mx:FormItem label="Will be added to Portofolio= ">
+				<s:DropDownList id="portofolioInput" dataProvider="{portofolioInputData}" labelField="name"/>	
+			</mx:FormItem>
+			
+			<mx:FormItem id="amountField" label="Amount">
+				<s:TextInput id="amountInput" text="{amount}"/>
+			</mx:FormItem>
+
+			<mx:FormItem id="actionDateField" label="Action Date">
+				<mx:DateField id="actionDateInput" selectedDate="{actionDate}" formatString="YYYY-MM-DD"/>
+			</mx:FormItem>
+			
+			<mx:FormItem id="costField" label="Cost">
+				<s:HGroup>
+					<s:TextInput id="costInput" text="{cost.moneyAmount}"/>
+					<s:TextInput id="costInputCurrency" text="{cost.moneyCurrency}" width="20"/>
+				</s:HGroup>
+			</mx:FormItem>			
+			
+			<mx:FormItem>	
+				<s:HGroup>
+					<mx:Button id="buttonSubmit" label="Buy" click="buttonSubmit_clickHandler(event)" width="50"/>
+					<mx:Button id="buttonBack" label="Back to Search" click="buttonBack_clickHandler(event)" width="50"/>					
+				</s:HGroup>
+				
+			</mx:FormItem>
+		</mx:Form>
+	</s:VGroup>
+
+	
+</s:Panel>
