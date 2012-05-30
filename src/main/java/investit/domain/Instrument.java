@@ -45,6 +45,7 @@ public class Instrument {
         i.setCompany(instrAndConditions.getCompany());
         i.setIdAtSource(instrAndConditions.getInstrumentId());
         i.setInstrumentType(instrAndConditions.getInstrumentType());
+        i.setInstrumentInfo(instrAndConditions.getInfo());
         return i;
     }
 

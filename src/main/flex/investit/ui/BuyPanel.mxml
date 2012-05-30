@@ -6,7 +6,8 @@
 		 title="Set your options for buying:">
 	
 	<fx:Metadata> 
-		[Event(name="buyOrBackEvent", type="investit.ui.BuyOrBackEvent")] 
+		[Event(name="backEvent", type="investit.ui.BuyOrBackEvent")] 
+		[Event(name="buyEvent", type="investit.ui.BuyOrBackEvent")]
 	</fx:Metadata> 
 
 
@@ -15,6 +16,7 @@
 			import flash.utils.describeType;
 			import flash.utils.getQualifiedClassName;
 			
+			import investit.debug.DebugHelp;
 			import investit.domain.MoneyValue;
 			import investit.domain.Portofolio;
 			import investit.domain.ServiceResult;
@@ -37,6 +39,7 @@
 			public function init(instrInfo:InstrumentInfoDTO):void
 			{
 				this.instrumentInfoDTO = instrInfo;
+				DebugHelp.show(instrInfo,"init in BuyPanel.mxml");
 				portofolioService.list();
 			}			
 			
@@ -141,7 +144,7 @@
 		</s:RemoteObject>
 		<!-- TODO refactor with other remote objects, make a kind of PortofolioRemoting object? -->
 		<!-- TODO or have the portofolioInputData as a property of this component -->
-		<s:RemoteObject channelSet="{remotingChannels}" destination="portofolioService" fault="faultHandler(event)" id="portofolioService">
+		<s:RemoteObject id="portofolioService" channelSet="{remotingChannels}" destination="portofolioService" fault="faultHandler(event)" >
 			<s:method name="list" result="portofolioService_listResultHandler(event)"/>
 		</s:RemoteObject>
 		
@@ -161,21 +164,21 @@
 	
 
 
-	<s:VGroup left="10" right="10" top="10" bottom="10">
+	<s:VGroup left="10" right="10" top="10" bottom="10" width="100%" height="100%">
 		
-		<mx:Form width="100%" height="100%">
+		<mx:Form height="100%" width="400">
 			<mx:FormItem label="{instrumentInfoDTO.instrumentType}">
-				<mx:Label text="{instrumentInfoDTO.name+'('+instrumentInfoDTO.ISINCode+')'}" width="200"/>
+				<mx:Label text="{instrumentInfoDTO.name+'('+instrumentInfoDTO.ISINCode+')'}"/>
 			</mx:FormItem>
 			<mx:FormItem label="Price">
-				<mx:Label text="{instrumentInfoDTO.lastPriceDouble+' '+instrumentInfoDTO.currencySymbol+'@ '+instrumentInfoDTO.lastPriceTime}" width="200"/>
+				<mx:Label text="{instrumentInfoDTO.lastPriceDouble+' '+instrumentInfoDTO.currencySymbol+'@ '+instrumentInfoDTO.lastPriceTime}"/>
 			</mx:FormItem>			
 			<mx:FormItem label="Info">
-				<mx:TextArea text="{instrumentInfoDTO.info}" width="200" editable="false"/>
+				<mx:TextArea text="{instrumentInfoDTO.info}" editable="false"/>
 			</mx:FormItem>			
 			
-			<mx:FormItem label="Will be added to Portofolio= ">
-				<s:DropDownList id="portofolioInput" dataProvider="{portofolioInputData}" labelField="name"/>	
+			<mx:FormItem label="Will be added to Portofolio= " width="100%">
+				<s:DropDownList id="portofolioInput" dataProvider="{portofolioInputData}" labelField="name" width="100%"/>	
 			</mx:FormItem>
 			
 			<mx:FormItem id="amountField" label="Amount">
@@ -189,7 +192,7 @@
 			<mx:FormItem id="costField" label="Cost">
 				<s:HGroup>
 					<s:TextInput id="costInput" text="{cost.moneyAmount}"/>
-					<s:TextInput id="costInputCurrency" text="{cost.moneyCurrency}" width="20"/>
+					<s:TextInput id="costInputCurrency" text="{cost.moneyCurrency}" width="50"/>
 				</s:HGroup>
 			</mx:FormItem>			
 			
